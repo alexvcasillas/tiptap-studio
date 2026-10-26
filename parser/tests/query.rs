@@ -55,6 +55,21 @@ fn descendants_preorder() {
 }
 
 #[test]
+fn find_mut_edits_first_match() {
+    let mut doc = sample();
+    let found = doc
+        .root_mut()
+        .find_mut(|n| n.get_text() == Some("b"))
+        .unwrap();
+    found.set_text("B");
+    assert!(doc.find(|n| n.get_text() == Some("B")).is_some());
+    assert!(doc
+        .root_mut()
+        .find_mut(|n| n.get_text() == Some("z"))
+        .is_none());
+}
+
+#[test]
 fn find_all_mut_edits() {
     let mut doc = sample();
     let mut pred = |n: &tiptap_rusty_parser::Node| n.node_type.as_deref() == Some("text");

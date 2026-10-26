@@ -63,9 +63,8 @@ built on it, so deep documents do not grow the call stack.
 
 ## Mutable queries
 
-`find_all_mut` and `walk_mut` give `&mut Node` access. The predicate still takes
-`&Node`. To edit only the first match, find its path with `path_to` and borrow it with
-`node_at_mut`.
+`find_mut`, `find_all_mut` and `walk_mut` give `&mut Node` access. The predicate still
+takes `&Node`. `find_mut` returns the first match.
 
 ```rust
 use tiptap_rusty_parser::{Document, Mark, Node};
@@ -74,8 +73,8 @@ let mut doc = Document::from_json_str(r#"{"type":"doc","content":[
     {"type":"paragraph","content":[{"type":"text","text":"x"},{"type":"text","text":"y"}]}
 ]}"#)?;
 
-if let Some(path) = doc.path_to(|n| n.get_text() == Some("x")) {
-    doc.node_at_mut(&path).unwrap().set_text("changed");
+if let Some(node) = doc.find_mut(|n| n.get_text() == Some("x")) {
+    node.set_text("changed");
 }
 
 let mut is_text = |n: &Node| n.node_type.as_deref() == Some("text");
@@ -99,6 +98,7 @@ To change every match in one call, use `replace_all`, covered in
 | --- | --- | --- |
 | `find(pred)` | `FnMut(&Node) -> bool` | `Option<&Node>` |
 | `find_all(pred)` | `FnMut(&Node) -> bool` | `Vec<&Node>` |
+| `find_mut(pred)` | `FnMut(&Node) -> bool` | `Option<&mut Node>` |
 | `find_all_mut(&mut pred)` | `&mut impl FnMut(&Node) -> bool` | `Vec<&mut Node>` |
 | `walk(&mut f)` | `&mut impl FnMut(&Node)` | `()` |
 | `walk_mut(&mut f)` | `&mut impl FnMut(&mut Node)` | `()` |
