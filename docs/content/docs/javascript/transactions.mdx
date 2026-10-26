@@ -67,7 +67,7 @@ function record(doc: TiptapDoc, edit: (doc: TiptapDoc) => void): Step {
 
 const step = record(doc, (d) => {
   d.splitBlockAt([0], { child: 0, offset: 5 }, 0);
-  d.wrap([1], "blockquote", undefined);
+  d.wrap([1], "blockquote");
 });
 
 doc.applyChanges(step.backward); // back to one paragraph
