@@ -237,8 +237,8 @@ pub fn apply(root: &mut Node, changes: &[Change]) -> std::result::Result<(), App
 ///
 /// Computed as `diff(apply(base, changes), base)`: replay the forward changes,
 /// then diff back to `base`. This reuses the diff round-trip guarantee, so it
-/// handles every value/shape edge exactly — subject to the same non-minimality
-/// caveats as [`diff`] (e.g. no move detection). Errors only if `changes`
+/// handles every value/shape edge exactly, with the same non-minimality
+/// caveats as [`diff`]. Errors only if `changes`
 /// itself doesn't apply to `base`.
 ///
 /// ```

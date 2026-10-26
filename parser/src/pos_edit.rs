@@ -174,7 +174,8 @@ pub enum PosEditError {
     Range(RangeError),
     /// A block-structural op failed.
     Block(BlockError),
-    /// A recorded change failed to apply.
+    /// A recorded change failed to apply. Not returned by
+    /// [`Node::apply_pos_edits`]; kept for compatibility.
     Apply(ApplyError),
     /// A cross-block span whose endpoints aren't sibling blocks under a common
     /// parent (different depths/parents) — unsupported in v1.
