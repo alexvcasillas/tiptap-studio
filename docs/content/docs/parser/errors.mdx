@@ -103,7 +103,7 @@ assert_eq!(
 | --- | --- |
 | `OutOfRange { pos, size }` | `pos` is past the end of the document. `size` is the largest valid position. |
 | `PathNotFound { path }` | An index path does not resolve. |
-| `OffsetOutOfRange { path, offset }` | `offset` is out of range: an index in `path` past its parent's last child, or a text offset past the end of the text (or on a node without text). The message says "child index" in both cases. |
+| `OffsetOutOfRange { path, offset }` | `offset` is out of range: an index in `path` past its parent's last child, or a text offset past the end of the text (or on a node without text). |
 
 ```rust
 # use tiptap_rusty_parser::{doc, Node, PosError};
