@@ -311,7 +311,7 @@ All return `Result<(), BlockError>`. `attrs` is an `Option<serde_json::Map<Strin
 | --- | --- |
 | `PathNotFound { path }` | No node at the path |
 | `IndexOutOfRange { parent, index }` | `split_block`'s `at` is past the end, or `join_blocks`'s `index` has no child |
-| `NoParent` | `split_block` or `split_block_at` on the root, or `lift` on the root or a child of the root |
+| `NoParent` | `split_block`, `split_block_at` or `wrap` on the root, or `lift` on the root or a child of the root |
 | `NoPreviousSibling { path }` | `join_blocks` with `index` 0 |
 | `InvalidRange { parent, start, end }` | A `BlockRange` is inverted or runs past the parent's children |
 | `Range(RangeError)` | `split_block_at` got an invalid `Position` |
