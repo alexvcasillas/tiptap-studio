@@ -27,9 +27,8 @@ impl Node {
         out
     }
 
-    /// Concatenate descendant text, inserting `sep` between adjacent block-level
-    /// siblings (a node is "block-level" if it has `content` and is not a `text`
-    /// node). Text within a block stays contiguous.
+    /// Concatenate descendant text, inserting `sep` between adjacent blocks. Children
+    /// with no text and at least one `content` field among them are blocks.
     ///
     /// ```
     /// use tiptap_rusty_parser::Document;
@@ -80,8 +79,14 @@ impl Node {
     }
 }
 
-fn is_block(node: &Node) -> bool {
-    node.content.is_some() && node.node_type.as_deref() != Some("text")
+fn is_text(node: &Node) -> bool {
+    node.node_type.as_deref() == Some("text")
+}
+
+/// Whether `children` hold blocks. Inline and block content never mix, so a list with
+/// no text and at least one node with `content` is a block list.
+fn is_block_list(children: &[Node]) -> bool {
+    !children.iter().any(is_text) && children.iter().any(|c| c.content.is_some())
 }
 
 fn render_sep(node: &Node, sep: &str, out: &mut String) {
@@ -89,14 +94,12 @@ fn render_sep(node: &Node, sep: &str, out: &mut String) {
         out.push_str(t);
     }
     if let Some(children) = &node.content {
-        let mut prev_block = false;
-        for child in children {
-            let block = is_block(child);
-            if block && prev_block {
+        let blocks = is_block_list(children);
+        for (i, child) in children.iter().enumerate() {
+            if blocks && i > 0 {
                 out.push_str(sep);
             }
             render_sep(child, sep, out);
-            prev_block = block;
         }
     }
 }

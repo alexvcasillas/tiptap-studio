@@ -40,9 +40,8 @@ nodes without text, such as `hardBreak`, add nothing.
 
 ## text_content_with_separator
 
-`text_content_with_separator` puts `sep` between two adjacent siblings when both are
-blocks. Text inside a block stays contiguous. A block here is any non-text node that
-has a `content` field, even an empty one.
+`text_content_with_separator` puts `sep` between adjacent blocks. Text inside a block
+stays contiguous.
 
 ```rust
 use tiptap_rusty_parser::{doc, Node};
@@ -55,9 +54,10 @@ let d = doc([
 assert_eq!(d.text_content_with_separator("\n"), "Title\nab");
 ```
 
-The test uses the JSON, not a schema. A node with no `content` key is not a block, so it
-gets no separator on either side. Tiptap writes an empty paragraph as
-`{"type":"paragraph"}`, with no `content`, so the text around one runs together:
+The test uses the JSON, not a schema. Inline and block nodes never share a parent, so
+a list of children is treated as blocks when it has no text and at least one child has
+a `content` field. Every child in that list is then a block, including an empty
+paragraph that Tiptap writes as `{"type":"paragraph"}`, with no `content`:
 
 ```rust
 use tiptap_rusty_parser::Document;
@@ -67,13 +67,13 @@ let doc = Document::from_json_str(r#"{"type":"doc","content":[
     {"type":"paragraph"},
     {"type":"paragraph","content":[{"type":"text","text":"world"}]}
 ]}"#)?;
-assert_eq!(doc.text_content_with_separator("\n"), "Helloworld");
-assert_eq!(doc.word_count(), 1);
+assert_eq!(doc.text_content_with_separator("\n"), "Hello\n\nworld");
+assert_eq!(doc.word_count(), 2);
 # Ok::<(), tiptap_rusty_parser::ParseError>(())
 ```
 
-If the separator matters, give empty paragraphs an empty `content` list before you
-extract the text.
+A parent whose children all lack `content`, such as a paragraph holding only a
+`hardBreak`, is read as inline, so its children get no separator.
 
 ## char_count
 
