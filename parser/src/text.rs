@@ -27,9 +27,8 @@ impl Node {
         out
     }
 
-    /// Concatenate descendant text, inserting `sep` between adjacent block-level
-    /// siblings (a node is "block-level" if it has `content` and is not a `text`
-    /// node). Text within a block stays contiguous.
+    /// Concatenate descendant text, inserting `sep` between adjacent blocks. Children
+    /// with no text and at least one `content` field among them are blocks.
     ///
     /// ```
     /// use tiptap_rusty_parser::Document;
