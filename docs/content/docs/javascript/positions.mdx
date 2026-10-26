@@ -102,7 +102,7 @@ doc.posToInline(7); // { block: [0], inline: { child: 0, offset: 6 } }
 doc.inlineToPos([0], { child: 0, offset: 6 }); // 7
 
 const { block, inline } = doc.posToInline(16);
-doc.insertText(block, inline, "!", undefined); // "B!ye"
+doc.insertText(block, inline, "!"); // "B!ye"
 ```
 
 `inlineToPos` throws when `child` is past the block's last child, or when `offset` does not
@@ -167,8 +167,8 @@ These two module functions carry positions from before a batch to after it. Pass
 
 | Function | Returns |
 | --- | --- |
-| `mapPosition(pos: number, edits: PosEdit[], assoc: Assoc)` | `number` |
-| `mapPositionRange(range: PosRange, edits: PosEdit[], assoc: Assoc)` | `PosRange` (`{ from, to }`) |
+| `mapPosition(pos: number, edits: PosEdit[], assoc?: Assoc)` | `number` |
+| `mapPositionRange(range: PosRange, edits: PosEdit[], assoc?: Assoc)` | `PosRange` (`{ from, to }`) |
 
 `assoc` is `"left"` or `"right"`. It decides where a position inside a replaced span, or exactly at an insertion, lands:
 `"left"` keeps it at the start, `"right"` moves it past the new content. `undefined` or

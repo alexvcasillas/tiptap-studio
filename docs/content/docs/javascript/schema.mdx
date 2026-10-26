@@ -110,12 +110,13 @@ Each violation has:
 | `{ MissingAttr: { key } }` | A required attribute is missing, on the node or on the mark given by `mark`. |
 | `{ UnknownAttr: { key } }` | An attribute is not in the allowed `attrs`, on the node or on the mark given by `mark`. |
 
-The shipped TypeScript types declare `kind` as `unknown`. Narrow it yourself:
+The shipped `ViolationKind` type is this union, so TypeScript narrows it with `in`:
 
 ```ts
 function describe(v: Violation): string {
   if (v.kind === "MissingNodeType") return `${v.path}: node has no type`;
-  const [name, detail] = Object.entries(v.kind as Record<string, unknown>)[0];
+  if ("MissingAttr" in v.kind) return `${v.path}: missing attribute ${v.kind.MissingAttr.key}`;
+  const [name, detail] = Object.entries(v.kind)[0];
   return `${v.path}: ${name} ${JSON.stringify(detail)}`;
 }
 ```

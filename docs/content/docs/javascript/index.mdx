@@ -90,7 +90,7 @@ doc.wordCount(); // 3
 // Find nodes by index path, then edit by path.
 const [headingPath] = doc.pathsByType("heading"); // [0]
 doc.setAttr(headingPath, "level", 1);
-doc.addMark([0, 0], "bold", undefined); // true
+doc.addMark([0, 0], "bold"); // true
 
 const json = doc.toJSON(); // a plain JSONContent object
 doc.free();

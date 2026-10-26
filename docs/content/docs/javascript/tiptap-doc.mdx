@@ -44,7 +44,7 @@ declared in the package's `.d.ts`.
 | `toJSON()` | `JSONContent` | A plain object. Unknown fields are kept. |
 | `toJSONString()` | `string` | Compact JSON. |
 | `toHTML()` | `string` | HTML with Tiptap's default tags. |
-| `toHTMLWith(options)` | `string` | HTML with [options](#html-options). |
+| `toHTMLWith(options: HtmlOptions)` | `string` | HTML with [options](#html-options). |
 | `free()` | `void` | Releases the WebAssembly memory. See [Memory and disposal](/docs/javascript#memory-and-disposal). |
 
 ## Find nodes
@@ -97,7 +97,7 @@ doc.wordCount(); // 3
 | `setAttr(path, key: string, value: unknown)` | `void` | Sets `attrs[key]`. |
 | `removeAttr(path, key: string)` | `boolean` | Removes `attrs[key]`; `true` if it existed. |
 | `setText(path, text: string)` | `void` | Sets the node's `text`. |
-| `addMark(path, markType: string, attrs)` | `boolean` | Adds the mark unless one of that type is already there; `true` if added. An empty `attrs` object adds no `attrs`. |
+| `addMark(path, markType: string, attrs?)` | `boolean` | Adds the mark unless one of that type is already there; `true` if added. An empty `attrs` object adds no `attrs`. |
 | `removeMark(path, markType: string)` | `number` | Removes every mark of that type; returns how many. |
 | `pushChild(path, child: JSONContent)` | `void` | Appends a child. |
 | `insertChild(path, index: number, child: JSONContent)` | `void` | Inserts at `index`, clamped to the child count. |
@@ -121,12 +121,12 @@ stays normalized.
 
 | Method | Effect |
 | --- | --- |
-| `insertText(path, position, text: string, marks)` | Inserts text. `marks` is a `Mark[]`, or `undefined` or `[]` for none. |
+| `insertText(path, position, text: string, marks?)` | Inserts text. `marks` is a `Mark[]`, or `undefined` or `[]` for none. |
 | `deleteRange(path, range)` | Deletes the range. A collapsed range does nothing. |
-| `replaceRange(path, range, text: string, marks)` | Replaces the range with text. |
-| `addMarkRange(path, range, markType: string, attrs)` | Adds a mark to every text node in the range. |
+| `replaceRange(path, range, text: string, marks?)` | Replaces the range with text. |
+| `addMarkRange(path, range, markType: string, attrs?)` | Adds a mark to every text node in the range. |
 | `removeMarkRange(path, range, markType: string)` | Removes every mark of that type in the range. |
-| `toggleMarkRange(path, range, markType: string, attrs)` | Removes the mark when every text node in the range has it, otherwise adds it everywhere. |
+| `toggleMarkRange(path, range, markType: string, attrs?)` | Removes the mark when every text node in the range has it, otherwise adds it everywhere. |
 
 All return `void` and throw on an out-of-range position, for example
 `range: offset 99 out of range in child 0`.
@@ -157,12 +157,12 @@ These restructure the block tree, addressed by index path.
 
 | Method | Effect |
 | --- | --- |
-| `setBlockType(path, type: string, attrs)` | Changes the node's type and keeps its content. `attrs` replaces the attributes: `undefined` or `null` removes them, `{}` sets an empty object. The root can be retyped. |
+| `setBlockType(path, type: string, attrs?)` | Changes the node's type and keeps its content. `attrs` replaces the attributes: `undefined` or `null` removes them, `{}` sets an empty object. The root can be retyped. |
 | `splitBlock(path, at: number, depth: number)` | Splits the block before child `at`: the left keeps children before `at`, a new right sibling of the same type takes the rest. `depth` also splits that many ancestors. |
 | `splitBlockAt(path, position: Position, depth: number)` | Like `splitBlock`, at an inline position, splitting the text there first. |
 | `joinBlocks(parentPath, index: number)` | Merges child `index` of `parentPath` into the previous sibling. The previous sibling's type and attributes win. |
-| `wrap(path, type: string, attrs)` | Wraps the block in a new parent of `type`. |
-| `wrapRange(parentPath, start: number, end: number, type: string, attrs)` | Wraps children `start` to `end` (exclusive) of `parentPath` in one new parent. |
+| `wrap(path, type: string, attrs?)` | Wraps the block in a new parent of `type`. |
+| `wrapRange(parentPath, start: number, end: number, type: string, attrs?)` | Wraps children `start` to `end` (exclusive) of `parentPath` in one new parent. |
 | `lift(path)` | Moves the block out of its parent into the grandparent, splitting the parent around it. A parent with only that child is replaced by it. |
 
 ```ts

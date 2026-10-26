@@ -27,7 +27,7 @@ a.diff(b);
 | Method | Returns | Notes |
 | --- | --- | --- |
 | `diff(other: TiptapDoc)` | `Change[]` | Text changes replace the whole text node. |
-| `diffWith(other: TiptapDoc, options: DiffOptions)` | `Change[]` | Choose how changed text is described. `undefined` or `null` behaves like `diff`. |
+| `diffWith(other: TiptapDoc, options?: DiffOptions)` | `Change[]` | Choose how changed text is described. `undefined` or `null` behaves like `diff`. |
 | `applyChanges(changes: Change[])` | `void` | Applies a change list in place. |
 
 Neither diff method modifies the documents. Both read `other` without consuming it, so it
