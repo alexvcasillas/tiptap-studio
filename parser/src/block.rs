@@ -28,7 +28,7 @@
 
 use crate::node::Node;
 use crate::normalize::{normalize_children, NormalizeOptions};
-use crate::range::{ensure_boundary, Position, RangeError};
+use crate::range::{check_boundary, ensure_boundary, Position, RangeError};
 use serde_json::{Map, Value};
 use std::fmt;
 
@@ -237,6 +237,7 @@ impl Node {
                 .ok_or_else(|| BlockError::PathNotFound {
                     path: path.to_vec(),
                 })?;
+            check_boundary(block.children(), pos)?;
             ensure_boundary(block.children_mut(), pos)?
         };
         self.split_block(path, at, depth)
@@ -300,14 +301,14 @@ impl Node {
             .ok_or_else(|| BlockError::PathNotFound {
                 path: range.parent.clone(),
             })?;
-        let children = parent.children_mut();
-        if range.start > range.end || range.end > children.len() {
+        if range.start > range.end || range.end > parent.children().len() {
             return Err(BlockError::InvalidRange {
                 parent: range.parent.clone(),
                 start: range.start,
                 end: range.end,
             });
         }
+        let children = parent.children_mut();
         let run: Vec<Node> = children
             .splice(range.start..range.end, std::iter::empty())
             .collect();

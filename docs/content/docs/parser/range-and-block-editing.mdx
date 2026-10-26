@@ -138,13 +138,9 @@ assert_eq!(
 );
 ```
 
-<Callout type="warn" title="Errors are not atomic">
-A range method checks the end of the range before its start. When the end is valid and
-the start is not, the text node at the end is already split when the error returns.
-Range methods also create an empty `content` list on a block that had none, even when
-they fail or change nothing. Use a [transaction](/docs/parser/transactions) when you need
-to roll back.
-</Callout>
+A range method checks both ends before it changes anything, so an error leaves the block
+as it was. A collapsed range is a no-op for deletes and mark changes, and none of them add
+an empty `content` list to a block that has none.
 
 ## Block editing
 

@@ -130,8 +130,9 @@ impl Node {
         text: &str,
         marks: Option<&[Mark]>,
     ) -> Result<(), RangeError> {
+        check_boundary(self.children(), pos)?;
         let children = self.children_mut();
-        let i = ensure_boundary(children, pos)?;
+        let i = split_at_boundary(children, pos);
         children.insert(i, make_text(text, marks));
         normalize_children(children, &NormalizeOptions::default());
         Ok(())
@@ -140,8 +141,12 @@ impl Node {
     /// Delete everything in `range`, splitting text nodes at the boundaries and
     /// removing fully-covered inline nodes. A collapsed range is a no-op.
     pub fn delete_range(&mut self, range: Range) -> Result<(), RangeError> {
+        check_range(self.children(), range)?;
+        if range.start == range.end {
+            return Ok(());
+        }
         let children = self.children_mut();
-        let (s, e) = resolve_range(children, range)?;
+        let (s, e) = split_range(children, range);
         children.drain(s..e);
         normalize_children(children, &NormalizeOptions::default());
         Ok(())
@@ -154,8 +159,12 @@ impl Node {
         text: &str,
         marks: Option<&[Mark]>,
     ) -> Result<(), RangeError> {
+        check_range(self.children(), range)?;
+        if range.start == range.end && text.is_empty() {
+            return Ok(());
+        }
         let children = self.children_mut();
-        let (s, e) = resolve_range(children, range)?;
+        let (s, e) = split_range(children, range);
         children.drain(s..e);
         if !text.is_empty() {
             children.insert(s, make_text(text, marks));
@@ -167,8 +176,12 @@ impl Node {
     /// Add `mark` to every text node covered by `range` (splitting at the
     /// boundaries first), then re-merge equal-mark neighbours.
     pub fn add_mark_range(&mut self, range: Range, mark: Mark) -> Result<(), RangeError> {
+        check_range(self.children(), range)?;
+        if range.start == range.end {
+            return Ok(());
+        }
         let children = self.children_mut();
-        let (s, e) = resolve_range(children, range)?;
+        let (s, e) = split_range(children, range);
         for node in &mut children[s..e] {
             if is_text(node) {
                 node.add_mark(mark.clone());
@@ -180,8 +193,12 @@ impl Node {
 
     /// Remove every mark of `mark_type` from text nodes covered by `range`.
     pub fn remove_mark_range(&mut self, range: Range, mark_type: &str) -> Result<(), RangeError> {
+        check_range(self.children(), range)?;
+        if range.start == range.end {
+            return Ok(());
+        }
         let children = self.children_mut();
-        let (s, e) = resolve_range(children, range)?;
+        let (s, e) = split_range(children, range);
         for node in &mut children[s..e] {
             if is_text(node) {
                 node.remove_mark(mark_type);
@@ -195,8 +212,12 @@ impl Node {
     /// mark of that type, remove it from all; otherwise add it to all. Mirrors
     /// the ProseMirror toggle semantics, range-scoped.
     pub fn toggle_mark_range(&mut self, range: Range, mark: Mark) -> Result<(), RangeError> {
+        check_range(self.children(), range)?;
+        if range.start == range.end {
+            return Ok(());
+        }
         let children = self.children_mut();
-        let (s, e) = resolve_range(children, range)?;
+        let (s, e) = split_range(children, range);
         let all_have = children[s..e]
             .iter()
             .filter(|n| is_text(n))
@@ -246,70 +267,95 @@ pub(crate) fn split_text_at(node: &Node, k: usize) -> (Node, Node) {
     (left, right)
 }
 
-/// Ensure a child boundary exists exactly at `pos`, splitting a text node if it
-/// falls mid-text. Returns the index of the first child at or after `pos`.
-pub(crate) fn ensure_boundary(
-    children: &mut Vec<Node>,
-    pos: Position,
-) -> Result<usize, RangeError> {
-    if pos.child > children.len() {
-        return Err(RangeError::ChildOutOfRange { child: pos.child });
-    }
-    if pos.child == children.len() {
+/// Check that `pos` is a valid boundary in `children` without changing them.
+pub(crate) fn check_boundary(children: &[Node], pos: Position) -> Result<(), RangeError> {
+    let Some(child) = children.get(pos.child) else {
         // End-of-content position; only offset 0 is meaningful.
-        return if pos.offset == 0 {
-            Ok(children.len())
+        return if pos.child > children.len() {
+            Err(RangeError::ChildOutOfRange { child: pos.child })
+        } else if pos.offset == 0 {
+            Ok(())
         } else {
             Err(RangeError::OffsetOutOfRange {
                 child: pos.child,
                 offset: pos.offset,
             })
         };
-    }
-    if is_text(&children[pos.child]) {
-        let cl = char_len(&children[pos.child]);
-        if pos.offset == 0 {
-            return Ok(pos.child);
-        }
-        if pos.offset == cl {
-            return Ok(pos.child + 1);
-        }
-        if pos.offset > cl {
+    };
+    if is_text(child) {
+        if pos.offset > char_len(child) {
             return Err(RangeError::OffsetOutOfRange {
                 child: pos.child,
                 offset: pos.offset,
             });
         }
-        let (l, r) = split_text_at(&children[pos.child], pos.offset);
-        children[pos.child] = l;
-        children.insert(pos.child + 1, r);
-        Ok(pos.child + 1)
+        Ok(())
     } else if pos.offset == 0 {
-        Ok(pos.child)
+        Ok(())
     } else {
         Err(RangeError::NotTextNode { child: pos.child })
     }
 }
 
-/// Resolve a range to a `[s, e)` child-index span, splitting text nodes at both
-/// boundaries. Splits the end boundary first, then the start, adjusting the end
-/// index if the start split inserted a node before it.
-pub(crate) fn resolve_range(
-    children: &mut Vec<Node>,
-    range: Range,
-) -> Result<(usize, usize), RangeError> {
+/// Check both ends of `range` and their order without changing `children`.
+pub(crate) fn check_range(children: &[Node], range: Range) -> Result<(), RangeError> {
     let (sp, ep) = (range.start, range.end);
     if (ep.child, ep.offset) < (sp.child, sp.offset) {
         return Err(RangeError::InvertedRange);
     }
-    let e = ensure_boundary(children, ep)?;
+    check_boundary(children, ep)?;
+    check_boundary(children, sp)
+}
+
+/// Ensure a child boundary exists exactly at `pos`, splitting a text node if it
+/// falls mid-text. Returns the index of the first child at or after `pos`.
+/// Validates first, so an error leaves `children` unchanged.
+pub(crate) fn ensure_boundary(
+    children: &mut Vec<Node>,
+    pos: Position,
+) -> Result<usize, RangeError> {
+    check_boundary(children, pos)?;
+    Ok(split_at_boundary(children, pos))
+}
+
+/// [`ensure_boundary`] for a `pos` already accepted by [`check_boundary`].
+fn split_at_boundary(children: &mut Vec<Node>, pos: Position) -> usize {
+    let Some(child) = children.get(pos.child) else {
+        return children.len();
+    };
+    if !is_text(child) || pos.offset == 0 {
+        return pos.child;
+    }
+    if pos.offset == char_len(child) {
+        return pos.child + 1;
+    }
+    let (l, r) = split_text_at(child, pos.offset);
+    children[pos.child] = l;
+    children.insert(pos.child + 1, r);
+    pos.child + 1
+}
+
+/// Resolve a range to a `[s, e)` child-index span, splitting text nodes at both
+/// boundaries. Validates both ends first, so an error leaves `children` unchanged.
+pub(crate) fn resolve_range(
+    children: &mut Vec<Node>,
+    range: Range,
+) -> Result<(usize, usize), RangeError> {
+    check_range(children, range)?;
+    Ok(split_range(children, range))
+}
+
+/// [`resolve_range`] for a range already accepted by [`check_range`]. Splits the
+/// end first, then the start, shifting the end if the start split inserted a node.
+fn split_range(children: &mut Vec<Node>, range: Range) -> (usize, usize) {
+    let e = split_at_boundary(children, range.end);
     let len_after_end = children.len();
-    let s = ensure_boundary(children, sp)?;
+    let s = split_at_boundary(children, range.start);
     let start_split_inserted = children.len() > len_after_end;
     let e = if start_split_inserted && s <= e {
         e + 1
     } else {
         e
     };
-    Ok((s, e))
+    (s, e)
 }

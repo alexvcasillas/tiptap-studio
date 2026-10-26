@@ -350,3 +350,14 @@ fn fuzz_block_ops_roundtrip() {
         assert_eq!(back, before, "undo mismatch");
     }
 }
+
+#[test]
+fn failed_block_ops_add_no_content_to_contentless_nodes() {
+    let original = Node::element("doc").with_children([Node::element("paragraph")]);
+    let mut n = original.clone();
+    assert!(n.split_block_at(&[0], Position::new(0, 1), 0).is_err());
+    assert!(n
+        .wrap_range(&BlockRange::new(vec![0], 0, 1), "blockquote", None)
+        .is_err());
+    assert_eq!(n, original);
+}

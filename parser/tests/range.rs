@@ -198,3 +198,32 @@ fn non_text_offset_errors() {
         Err(RangeError::NotTextNode { child: 0 })
     );
 }
+
+#[test]
+fn failed_range_edits_leave_the_block_unchanged() {
+    let original = para([Node::text("hello"), Node::text("world")]);
+    // End is valid (would split "world"), start is past "hello".
+    let bad = range((0, 9), (1, 2));
+    let mut p = original.clone();
+    assert!(p.delete_range(bad).is_err());
+    assert!(p.replace_range(bad, "x", None).is_err());
+    assert!(p.add_mark_range(bad, Mark::new("bold")).is_err());
+    assert!(p.remove_mark_range(bad, "bold").is_err());
+    assert!(p.toggle_mark_range(bad, Mark::new("bold")).is_err());
+    assert_eq!(p, original);
+}
+
+#[test]
+fn range_edits_on_a_contentless_block_add_no_content_on_error_or_no_op() {
+    let original = Node::element("paragraph");
+    let mut p = original.clone();
+    assert!(p.insert_text(pos(0, 3), "x", None).is_err());
+    assert!(p.delete_range(range((0, 0), (0, 1))).is_err());
+    assert!(p.delete_range(range((0, 0), (0, 0))).is_ok());
+    assert!(p
+        .add_mark_range(range((0, 0), (0, 0)), Mark::new("bold"))
+        .is_ok());
+    assert!(p.replace_range(range((0, 0), (0, 0)), "", None).is_ok());
+    assert_eq!(p, original);
+    assert!(p.content.is_none());
+}
