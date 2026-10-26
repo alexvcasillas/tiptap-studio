@@ -350,3 +350,11 @@ fn fuzz_block_ops_roundtrip() {
         assert_eq!(back, before, "undo mismatch");
     }
 }
+
+#[test]
+fn wrap_root_has_no_parent() {
+    let original = doc([para("a")]);
+    let mut n = original.clone();
+    assert_eq!(n.wrap(&[], "blockquote", None), Err(BlockError::NoParent));
+    assert_eq!(n, original);
+}

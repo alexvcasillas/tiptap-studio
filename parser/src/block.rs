@@ -283,6 +283,9 @@ impl Node {
         wrapper_type: impl Into<String>,
         attrs: Option<Map<String, Value>>,
     ) -> Result<(), BlockError> {
+        if path.is_empty() {
+            return Err(BlockError::NoParent);
+        }
         self.wrap_range(&BlockRange::single(path), wrapper_type, attrs)
     }
 
