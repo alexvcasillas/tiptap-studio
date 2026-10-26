@@ -200,7 +200,7 @@ leaf policy.
 | `is_leaf()` / `is_leaf_with(policy)` | Whether the node is a leaf |
 | `resolve(pos)` / `resolve_with(pos, policy)` | `Result<ResolvedPos, PosError>` |
 | `pos_before(path)` / `pos_before_with(path, policy)` | `Result<usize, PosError>`: the position just before the node |
-| `pos_after(path)` / `pos_after_with(path, policy)` | `Result<usize, PosError>`: the position just after the node |
+| `pos_after(path)` / `pos_after_with(path, policy)` | `Result<usize, PosError>`: the position just after the node, or the content size for the root |
 | `pos_in_text(text_path, offset)` | `Result<usize, PosError>`: a scalar offset inside a text node |
 | `pos_to_inline(pos)` | `Result<(Vec<usize>, Position), PosError>` |
 | `inline_to_pos(block_path, inline)` | `Result<usize, PosError>` |

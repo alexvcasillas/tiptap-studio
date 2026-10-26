@@ -61,8 +61,8 @@ doc.posAfter([1]); // 14
 doc.posInText([2, 0], 1); // 16: after "B"
 ```
 
-Use `posBefore` and `posAfter` with paths below the root. For the root path `[]`,
-`posAfter` returns `contentSize() + 2`, which is not a valid position.
+For the root path `[]`, `posBefore` returns `0` and `posAfter` returns `contentSize()`,
+the first and last positions in the document.
 
 ### ResolvedPos
 
@@ -108,12 +108,8 @@ doc.insertText(block, inline, "!", undefined); // "B!ye"
 `inlineToPos` throws when `child` is past the block's last child, or when `offset` does not
 fit: past the end of a text child, or not `0` for any other child.
 
-<Callout type="warn">
 A position between top-level blocks resolves to the root, so `posToInline` returns
-`block: []`. `inlineToPos([], …)` returns one more than the matching position, because it
-adds a start token the root does not have. Only pass block paths below the root to
-`inlineToPos`.
-</Callout>
+`block: []`. `inlineToPos` accepts that pair and returns the same position.
 
 ## Edit by position
 

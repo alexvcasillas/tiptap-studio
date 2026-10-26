@@ -148,11 +148,12 @@ pub enum PosError {
         /// The unresolved path.
         path: Vec<usize>,
     },
-    /// A child index in a path is out of range for its parent.
+    /// A child index in a path is out of range for its parent, or a text
+    /// offset is past the end of its text.
     OffsetOutOfRange {
         /// The path being resolved.
         path: Vec<usize>,
-        /// The offending child index.
+        /// The offending child index or text offset.
         offset: usize,
     },
 }
@@ -165,7 +166,7 @@ impl fmt::Display for PosError {
             }
             PosError::PathNotFound { path } => write!(f, "pos: no node at path {path:?}"),
             PosError::OffsetOutOfRange { path, offset } => {
-                write!(f, "pos: child index {offset} out of range at {path:?}")
+                write!(f, "pos: offset {offset} out of range at {path:?}")
             }
         }
     }
@@ -317,8 +318,12 @@ impl Node {
         self.pos_after_with(path, &LeafPolicy::Builtin)
     }
 
-    /// Flat position just *after* the node at `path` under `policy`.
+    /// Flat position just *after* the node at `path` under `policy`. For the root
+    /// this is its content size, the last position inside the document.
     pub fn pos_after_with(&self, path: &[usize], policy: &LeafPolicy) -> Result<usize, PosError> {
+        if path.is_empty() {
+            return Ok(self.content_size_with(policy));
+        }
         let before = self.pos_before_with(path, policy)?;
         let node = self.node_at(path).ok_or_else(|| PosError::PathNotFound {
             path: path.to_vec(),
@@ -368,8 +373,9 @@ impl Node {
     /// inline [`Position`] (default policy).
     pub fn inline_to_pos(&self, block_path: &[usize], inline: Position) -> Result<usize, PosError> {
         let policy = LeafPolicy::Builtin;
-        // Just inside the block (past its open token).
-        let mut acc = self.pos_before_with(block_path, &policy)? + 1;
+        // Just inside the block, past its open token. The root has none.
+        let open = usize::from(!block_path.is_empty());
+        let mut acc = self.pos_before_with(block_path, &policy)? + open;
         let block = self
             .node_at(block_path)
             .ok_or_else(|| PosError::PathNotFound {

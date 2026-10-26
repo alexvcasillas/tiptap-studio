@@ -1,6 +1,6 @@
 //! Flat ProseMirror position model tests.
 
-use tiptap_rusty_parser::{LeafPolicy, Node, PosError, Position};
+use tiptap_rusty_parser::{Document, LeafPolicy, Node, PosError, Position};
 
 fn p(text: &str) -> Node {
     Node::element("paragraph").with_child(Node::text(text))
@@ -175,4 +175,23 @@ fn inline_bridges_roundtrip() {
     let (b2, i2) = d.pos_to_inline(1).unwrap();
     assert_eq!((b2, i2), (vec![0], Position::new(0, 0)));
     assert_eq!(d.inline_to_pos(&[0], Position::new(0, 0)).unwrap(), 1);
+}
+
+#[test]
+fn root_positions_stay_inside_the_document() {
+    let doc = Document::from_json_str(
+        r#"{"type":"doc","content":[
+            {"type":"paragraph","content":[{"type":"text","text":"ab"}]},
+            {"type":"horizontalRule"},
+            {"type":"paragraph"}
+        ]}"#,
+    )
+    .unwrap();
+    let root = doc.root();
+    assert_eq!(root.pos_before(&[]).unwrap(), 0);
+    assert_eq!(root.pos_after(&[]).unwrap(), root.content_size());
+    for p in 0..=root.content_size() {
+        let (block, inline) = root.pos_to_inline(p).unwrap();
+        assert_eq!(root.inline_to_pos(&block, inline).unwrap(), p, "pos {p}");
+    }
 }
