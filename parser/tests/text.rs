@@ -69,3 +69,43 @@ fn word_count_cjk() {
     // unicode word segmentation counts each CJK ideograph as a word
     assert_eq!(doc.word_count(), 4);
 }
+
+#[test]
+fn contentless_empty_blocks_separate_like_empty_content() {
+    let without = Document::from_json_str(
+        r#"{"type":"doc","content":[
+            {"type":"paragraph","content":[{"type":"text","text":"Hello"}]},
+            {"type":"paragraph"},
+            {"type":"paragraph","content":[{"type":"text","text":"world"}]}
+        ]}"#,
+    )
+    .unwrap();
+    let with = Document::from_json_str(
+        r#"{"type":"doc","content":[
+            {"type":"paragraph","content":[{"type":"text","text":"Hello"}]},
+            {"type":"paragraph","content":[]},
+            {"type":"paragraph","content":[{"type":"text","text":"world"}]}
+        ]}"#,
+    )
+    .unwrap();
+    assert_eq!(without.text_content_with_separator("\n"), "Hello\n\nworld");
+    assert_eq!(
+        without.text_content_with_separator("\n"),
+        with.text_content_with_separator("\n")
+    );
+    assert_eq!(without.word_count(), 2);
+}
+
+#[test]
+fn inline_leaves_get_no_separator() {
+    let doc = Document::from_json_str(
+        r#"{"type":"doc","content":[
+            {"type":"paragraph","content":[
+                {"type":"text","text":"a"},{"type":"hardBreak"},{"type":"text","text":"b"}
+            ]},
+            {"type":"paragraph","content":[{"type":"hardBreak"},{"type":"mention"}]}
+        ]}"#,
+    )
+    .unwrap();
+    assert_eq!(doc.text_content_with_separator("|"), "ab|");
+}
