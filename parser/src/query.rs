@@ -42,12 +42,17 @@ impl Node {
 
     /// Mutable variant of [`Node::find`].
     pub fn find_mut(&mut self, mut pred: impl FnMut(&Node) -> bool) -> Option<&mut Node> {
+        self.find_mut_by(&mut pred)
+    }
+
+    // Takes the predicate by reference so recursion keeps a single instantiation.
+    fn find_mut_by<F: FnMut(&Node) -> bool + ?Sized>(&mut self, pred: &mut F) -> Option<&mut Node> {
         if pred(self) {
             return Some(self);
         }
         let children = self.content.as_mut()?;
         for child in children {
-            if let Some(found) = child.find_mut(&mut pred) {
+            if let Some(found) = child.find_mut_by(pred) {
                 return Some(found);
             }
         }
